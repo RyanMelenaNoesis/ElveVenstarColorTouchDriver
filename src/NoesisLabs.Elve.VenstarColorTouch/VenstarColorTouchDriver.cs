@@ -17,9 +17,9 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 	{
 		private const string SSDP_DISCOVERY_MESSAGE = "M-SEARCH * HTTP/1.1\r\nHost: 239.255.255.250:1900\r\nMan: ssdp:discover\r\nST: colortouch:ecp\r\n";
 
-		private Timer discoverTimer;
 		private HttpClient http;
 		private ICommunication multicastComm;
+		private Timer refreshTimer;
 		private ICommunication unicastComm;
 
 		public CodecoreTechnologies.Elve.DriverFramework.Scripting.ScriptPagedListCollection PagedListThermostats
@@ -103,8 +103,6 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 
 			try
 			{
-				this.http = new HttpClient();
-
 				var discoveryEndpoint = new IPEndPoint(IPAddress.Parse("239.255.255.250"), 1900);
 
 				var localMulticastEndPoint = new IPEndPoint(IPAddress.Any, 1900);
@@ -129,11 +127,15 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 				this.multicastComm.Open();
 				this.unicastComm.Open();
 
-				this.discoverTimer = new System.Timers.Timer();
-				this.discoverTimer.Interval = 60 * 1000;
-				this.discoverTimer.AutoReset = false;
-				this.discoverTimer.Elapsed += new ElapsedEventHandler(this.SendDiscoveryMessage);
-				this.SendDiscoveryMessage(this, (ElapsedEventArgs)ElapsedEventArgs.Empty);
+				this.SendDiscoveryMessage();
+
+				this.http = new HttpClient();
+
+				this.refreshTimer = new System.Timers.Timer();
+				this.refreshTimer.Interval = 10 * 1000;
+				this.refreshTimer.AutoReset = false;
+				this.refreshTimer.Elapsed += new ElapsedEventHandler(this.Refresh);
+				this.Refresh(this, (ElapsedEventArgs)ElapsedEventArgs.Empty);
 
 				return true;
 			}
@@ -144,14 +146,14 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 			}
 			finally
 			{
-				if (this.discoverTimer != null) { this.discoverTimer.Dispose(); }
+				if (this.refreshTimer != null) { this.refreshTimer.Dispose(); }
 				if (this.http != null) { this.http.Dispose(); }
 				if (this.multicastComm != null) { this.multicastComm.Dispose(); }
 				if (this.unicastComm != null) { this.unicastComm.Dispose(); }
 			}
 		}
 
-		private void SendDiscoveryMessage(object sender, ElapsedEventArgs e)
+		private void SendDiscoveryMessage()
 		{
 			try
 			{
@@ -163,7 +165,24 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 			{
 				this.Logger.Error("Error sending discovery message.", ex);
 			}
-			finally { this.discoverTimer.Start(); }
+			finally { this.refreshTimer.Start(); }
+		}
+
+		private void Refresh(object sender, ElapsedEventArgs e)
+		{
+			try
+			{
+				this.Logger.Debug("Refreshing Thermostat Values.");
+
+				//TODO: Clean up thermostats past max-age
+
+				//TODO: Refresh thermostat values
+			}
+			catch (Exception ex)
+			{
+				this.Logger.Error("Error refreshing thermostat values.", ex);
+			}
+			finally { this.refreshTimer.Start(); }
 		}
 
 		private void Comm_ReceivedString(object sender, ReceivedStringEventArgs e)
