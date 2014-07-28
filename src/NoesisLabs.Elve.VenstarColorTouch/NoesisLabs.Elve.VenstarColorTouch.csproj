@@ -37,6 +37,14 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Net.Http.Extensions">
+      <HintPath>..\packages\Microsoft.Net.Http.2.2.22\lib\net45\System.Net.Http.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.Primitives">
+      <HintPath>..\packages\Microsoft.Net.Http.2.2.22\lib\net45\System.Net.Http.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.WebRequest" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -44,14 +52,40 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enums\AvailableModes.cs" />
+    <Compile Include="Enums\AwayState.cs" />
+    <Compile Include="Enums\OverrideState.cs" />
+    <Compile Include="Enums\HolidayState.cs" />
+    <Compile Include="Enums\ForceUnoccupied.cs" />
+    <Compile Include="Enums\TempUnits.cs" />
+    <Compile Include="Enums\State.cs" />
+    <Compile Include="Enums\ScheduleSetting.cs" />
+    <Compile Include="Enums\ScheduledPart.cs" />
+    <Compile Include="Enums\FanSetting.cs" />
+    <Compile Include="Enums\FanState.cs" />
+    <Compile Include="Enums\Mode.cs" />
+    <Compile Include="Models\Alert.cs" />
+    <Compile Include="Models\CommercialThermostat.cs" />
+    <Compile Include="Models\CommercialRuntime.cs" />
+    <Compile Include="Models\ResidentialRuntime.cs" />
+    <Compile Include="Models\ResidentialThermostat.cs" />
+    <Compile Include="Models\Runtime.cs" />
+    <Compile Include="Models\Sensor.cs" />
+    <Compile Include="Models\Thermostat.cs" />
     <Compile Include="VenstarColorTouchDriver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
     <None Include="Libraries\CodecoreTechnologies.Elve.dll" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" />
+  <Target Name="EnsureBclBuildImported" BeforeTargets="BeforeBuild" Condition="'$(BclBuildImported)' == ''">
+    <Error Condition="!Exists('..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" Text="This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=317567." HelpKeyword="BCLBUILD2001" />
+    <Error Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" Text="The build restored NuGet packages. Build the project again to include these packages in the build. For more information, see http://go.microsoft.com/fwlink/?LinkID=317568." HelpKeyword="BCLBUILD2002" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
