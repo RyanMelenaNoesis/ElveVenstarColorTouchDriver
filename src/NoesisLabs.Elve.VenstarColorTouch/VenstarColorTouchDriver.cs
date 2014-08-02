@@ -1,8 +1,12 @@
 ﻿using CodecoreTechnologies.Elve.DriverFramework;
 using CodecoreTechnologies.Elve.DriverFramework.Communication;
 using CodecoreTechnologies.Elve.DriverFramework.DriverInterfaces;
+using CodecoreTechnologies.Elve.DriverFramework.Scripting;
+using NoesisLabs.Elve.VenstarColorTouch.Enums;
+using NoesisLabs.Elve.VenstarColorTouch.Models;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -13,8 +17,15 @@ using System.Timers;
 
 namespace NoesisLabs.Elve.VenstarColorTouch
 {
+	[Driver("Venstar ColorTouch Driver", "A driver for monitoring and controlling Venstar ColorTouch thermostats.", "Ryan Melena", "Climate Control", "", "ColorTouch", DriverCommunicationPort.Network, DriverMultipleInstances.OnePerDriverService, 0, 1, DriverReleaseStages.Development, "Venstar", "http://www.venstar.com/", null)]
 	public class VenstarColorTouchDriver : Driver, IClimateControlDriver
 	{
+		private const string COLORTOUCH_SSDP_COMMERCIAL_MODEL_KEYWORD = "type:commercial";
+		private const string COLORTOUCH_SSDP_IDENTIFIER_TOKEN = "ecp:";
+		private const int COLORTOUCH_SSDP_IDENTIFIER_LENGTH = 17;
+		private const string COLORTOUCH_SSDP_KEYWORD = "colortouch:ecp";
+		private const string COLORTOUCH_SSDP_RESIDENTIAL_MODEL_KEYWORD = "type:residential";
+		private const int MAX_THERMOSTATS = 256;
 		private const string SSDP_DISCOVERY_MESSAGE = "M-SEARCH * HTTP/1.1\r\nHost: 239.255.255.250:1900\r\nMan: ssdp:discover\r\nST: colortouch:ecp\r\n";
 
 		private HttpClient http;
@@ -22,84 +33,164 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 		private Timer refreshTimer;
 		private ICommunication unicastComm;
 
-		public CodecoreTechnologies.Elve.DriverFramework.Scripting.ScriptPagedListCollection PagedListThermostats
+		private List<Thermostat> thermostats = new List<Thermostat>();
+
+		[ScriptObjectPropertyAttribute("Paged List Thermostats", "Provides the list of thermostats to be shown in a Touch Screen Interface's Paged List control. The item value has the following properties: ID. ID is the thermostat id.")]
+		[SupportsDriverPropertyBinding]
+		public ScriptPagedListCollection PagedListThermostats
 		{
-			get { throw new NotImplementedException(); }
+			get
+			{
+				return new ScriptPagedListCollection(this.thermostats.Select(t => 
+					{
+						var thermostat = new ScriptExpandoObject();
+						thermostat.SetProperty("ID", new ScriptNumber(this.thermostats.IndexOf(t)));
+						string subtitle = t.Sensors.First().Temperature.ToString() + "\u00B0  (" + t.CoolTemp.ToString() + "\u00B0/" + t.HeatTemp.ToString() + "\u00B0) Mode: " + t.Mode.ToString();
+						return new ScriptPagedListItem(t.Name, subtitle, thermostat);
+					}));
+			}
 		}
 
-		public void SetThermostatCoolSetPoint(CodecoreTechnologies.Elve.DriverFramework.Scripting.ScriptNumber thermostatID, CodecoreTechnologies.Elve.DriverFramework.Scripting.ScriptNumber setPoint)
+		[ScriptObjectMethod("Set Thermostat Cool Set Point", "Set the cool set point on a thermostat.", "Set the cool set point to {PARAM|1|72} for thermostat {PARAM|0|1} on {NAME}.")]
+		[ScriptObjectMethodParameter("ThermostatID", "The Id of the thermostat.", 1, 256)]
+		[ScriptObjectMethodParameter("SetPoint", "The cool set point.", 0, 100)]
+		public void SetThermostatCoolSetPoint(ScriptNumber thermostatID, ScriptNumber setPoint)
 		{
-			throw new NotImplementedException();
+			int index = thermostatID.ToPrimitiveInt32() - 1;
+			if (this.thermostats[index] != null)
+			{
+				this.thermostats[index].SetCoolTemp(setPoint.ToPrimitiveInt32());
+			}
+			else
+			{
+				this.Logger.Error("Invalid ThermostatID [" + thermostatID.ToString() + "] in SetThermostatCoolSetPoint call.");
+			}
 		}
 
-		public void SetThermostatFanMode(CodecoreTechnologies.Elve.DriverFramework.Scripting.ScriptNumber thermostatID, CodecoreTechnologies.Elve.DriverFramework.Scripting.ScriptNumber fanMode)
+		[ScriptObjectMethod("Set Thermostat Fan Mode", "Set the fan mode on a thermostat.", "Set the fan mode to {PARAM|1|72} for thermostat {PARAM|0|1} on {NAME}.")]
+		[ScriptObjectMethodParameter("ThermostatID", "The Id of the thermostat.", 1, 256)]
+		[ScriptObjectMethodParameter("FanMode", "The fan mode.  Valid values are: 0 for 'Auto' and 1 for 'On'.", 0, 1)]
+		public void SetThermostatFanMode(ScriptNumber thermostatID, ScriptNumber fanMode)
 		{
-			throw new NotImplementedException();
+			int index = thermostatID.ToPrimitiveInt32() - 1;
+			if (this.thermostats.Count > index)
+			{
+				this.thermostats[index].FanSetting = (FanSetting)fanMode.ToPrimitiveInt32();
+			}
+			else
+			{
+				this.Logger.Error("Invalid ThermostatID [" + thermostatID.ToString() + "] in SetThermostatFanMode call.");
+			}
 		}
 
-		public void SetThermostatHeatSetPoint(CodecoreTechnologies.Elve.DriverFramework.Scripting.ScriptNumber thermostatID, CodecoreTechnologies.Elve.DriverFramework.Scripting.ScriptNumber setPoint)
+		[ScriptObjectMethod("Set Thermostat Heat Set Point", "Set the heat set point on a thermostat.", "Set the heat set point to {PARAM|1|72} for thermostat {PARAM|0|1} on {NAME}.")]
+		[ScriptObjectMethodParameter("ThermostatID", "The Id of the thermostat.", 1, 256)]
+		[ScriptObjectMethodParameter("SetPoint", "The heat set point.", 0, 100)]
+		public void SetThermostatHeatSetPoint(ScriptNumber thermostatID, ScriptNumber setPoint)
 		{
-			throw new NotImplementedException();
+			int index = thermostatID.ToPrimitiveInt32() - 1;
+			if (this.thermostats.Count > index)
+			{
+				this.thermostats[index].SetHeatTemp(setPoint.ToPrimitiveInt32());
+			}
+			else
+			{
+				this.Logger.Error("Invalid ThermostatID [" + thermostatID.ToString() + "] in SetThermostatHeatSetPoint call.");
+			}
 		}
 
-		public void SetThermostatHold(CodecoreTechnologies.Elve.DriverFramework.Scripting.ScriptNumber thermostatID, CodecoreTechnologies.Elve.DriverFramework.Scripting.ScriptBoolean hold)
+		[ScriptObjectMethod("Set Thermostat Hold", "Set temperature hold on a thermostat.", "Set temperature hold to {PARAM|1|0} for thermostat {PARAM|0|1} on {NAME}.")]
+		[ScriptObjectMethodParameter("ThermostatID", "The Id of the thermostat.", 1, 256)]
+		[ScriptObjectMethodParameter("Hold", "Temperature hold.")]
+		public void SetThermostatHold(ScriptNumber thermostatID, ScriptBoolean hold)
 		{
-			throw new NotImplementedException();
+			int index = thermostatID.ToPrimitiveInt32() - 1;
+			if (this.thermostats.Count > index)
+			{
+				ScheduleSetting scheduleSettings = (hold.ToPrimitiveBoolean()) ? ScheduleSetting.Off : ScheduleSetting.On;
+				this.thermostats[index].ScheduleSetting = scheduleSettings;
+			}
+			else
+			{
+				this.Logger.Error("Invalid ThermostatID [" + thermostatID.ToString() + "] in SetThermostatHold call.");
+			}
 		}
 
-		public void SetThermostatMode(CodecoreTechnologies.Elve.DriverFramework.Scripting.ScriptNumber thermostatID, CodecoreTechnologies.Elve.DriverFramework.Scripting.ScriptNumber mode)
+		[ScriptObjectMethod("Set Thermostat Mode", "Set mode on a thermostat.", "Set mode to {PARAM|1|3} for thermostat {PARAM|0|1} on {NAME}.")]
+		[ScriptObjectMethodParameter("ThermostatID", "The Id of the thermostat.", 1, 256)]
+		[ScriptObjectMethodParameter("Mode", "Thermostat mode.  Valid values are: 0 for 'Off', 1 for 'Heat', 2 for 'Cool', and 3 for 'Auto'.", 0, 3)]
+		public void SetThermostatMode(ScriptNumber thermostatID, ScriptNumber mode)
 		{
-			throw new NotImplementedException();
+			int index = thermostatID.ToPrimitiveInt32() - 1;
+			if (this.thermostats.Count > index)
+			{
+				this.thermostats[index].Mode = (Mode)mode.ToPrimitiveInt32();
+			}
+			else
+			{
+				this.Logger.Error("Invalid ThermostatID [" + thermostatID.ToString() + "] in SetThermostatMode call.");
+			}
 		}
 
-		public CodecoreTechnologies.Elve.DriverFramework.Scripting.IScriptArray ThermostatCoolSetPoints
+		[ScriptObjectPropertyAttribute("Thermostat Cool Set Points", "Gets an array of all thermostats' cool set point.", "the {NAME} cool set point for item #{INDEX|1}", null)]
+		public IScriptArray ThermostatCoolSetPoints
 		{
-			get { throw new NotImplementedException(); }
+			get { return new ScriptArrayMarshalByReference(this.thermostats.Select(t => t.CoolTemp), new ScriptArraySetScriptNumberCallback(this.SetThermostatCoolSetPoint), 1); }
 		}
 
-		public CodecoreTechnologies.Elve.DriverFramework.Scripting.IScriptArray ThermostatCurrentTemperatures
+		[ScriptObjectPropertyAttribute("Thermostat Current Temperatures", "Gets an array of all thermostats' current temperature.", "the {NAME} current temperature for item #{INDEX|1}", null)]
+		public IScriptArray ThermostatCurrentTemperatures
 		{
-			get { throw new NotImplementedException(); }
+			get { return new ScriptArrayMarshalByValue(this.thermostats.Select(t => t.Sensors.First().Temperature), 1); }
 		}
 
-		public CodecoreTechnologies.Elve.DriverFramework.Scripting.IScriptArray ThermostatFanModeTexts
+		[ScriptObjectPropertyAttribute("Thermostat Fan Mode Names", "Gets an array of all thermostats' fan mode name.", "the {NAME} current fan mode name for item #{INDEX|1}", null)]
+		public IScriptArray ThermostatFanModeTexts
 		{
-			get { throw new NotImplementedException(); }
+			get { return new ScriptArrayMarshalByValue(this.thermostats.Select(t => t.FanSetting.ToString()), 1); }
 		}
 
-		public CodecoreTechnologies.Elve.DriverFramework.Scripting.IScriptArray ThermostatFanModes
+		[ScriptObjectPropertyAttribute("Thermostat Fan Mode Values", "Gets an array of all thermostats' fan mode value.", "the {NAME} current fan mode value for item #{INDEX|1}", null)]
+		public IScriptArray ThermostatFanModes
 		{
-			get { throw new NotImplementedException(); }
+			get { return new ScriptArrayMarshalByReference(this.thermostats.Select(t => (int)t.FanSetting), new ScriptArraySetScriptNumberCallback(this.SetThermostatFanMode), 1); }
 		}
 
-		public CodecoreTechnologies.Elve.DriverFramework.Scripting.IScriptArray ThermostatHeatSetPoints
+		[ScriptObjectPropertyAttribute("Thermostat Heat Set Points", "Gets an array of all thermostats' heat set point.", "the {NAME} heat set point for item #{INDEX|1}", null)]
+		public IScriptArray ThermostatHeatSetPoints
 		{
-			get { throw new NotImplementedException(); }
+			get { return new ScriptArrayMarshalByReference(this.thermostats.Select(t => t.HeatTemp), new ScriptArraySetScriptNumberCallback(this.SetThermostatHeatSetPoint), 1); }
 		}
 
-		public CodecoreTechnologies.Elve.DriverFramework.Scripting.IScriptArray ThermostatHolds
+		[ScriptObjectPropertyAttribute("Thermostat Hold Setting Values", "Gets an array of all thermostats' hold setting value.", "the {NAME} current hold setting value for item #{INDEX|1}", null)]
+		public IScriptArray ThermostatHolds
 		{
-			get { throw new NotImplementedException(); }
+			get { return new ScriptArrayMarshalByReference(this.thermostats.Select(t => (t.ScheduleSetting == ScheduleSetting.Off)), new ScriptArraySetScriptBooleanCallback(this.SetThermostatHold), 1); }
 		}
 
-		public CodecoreTechnologies.Elve.DriverFramework.Scripting.IScriptArray ThermostatModeTexts
+		[ScriptObjectPropertyAttribute("Thermostat Hold Setting Names", "Gets an array of all thermostats' hold setting name.", "the {NAME} current hold setting name for item #{INDEX|1}", null)]
+		public IScriptArray ThermostatModeTexts
 		{
-			get { throw new NotImplementedException(); }
+			get { return new ScriptArrayMarshalByValue(this.thermostats.Select(t => "Schedule " + t.ScheduleSetting.ToString()), 1); }
 		}
 
-		public CodecoreTechnologies.Elve.DriverFramework.Scripting.IScriptArray ThermostatModes
+		[ScriptObjectPropertyAttribute("Thermostat Modes", "Gets an array of all thermostats' mode.", "the {NAME} current mode for item #{INDEX|1}", null)]
+		public IScriptArray ThermostatModes
 		{
-			get { throw new NotImplementedException(); }
+			get { return new ScriptArrayMarshalByReference(this.thermostats.Select(t => (int)t.Mode), new ScriptArraySetScriptNumberCallback(this.SetThermostatMode), 1); }
 		}
 
-		public CodecoreTechnologies.Elve.DriverFramework.Scripting.IScriptArray ThermostatNames
+		[ScriptObjectPropertyAttribute("Thermostat Names", "Gets an array of all thermostats' name.", "the {NAME} current name for item #{INDEX|1}", null)]
+		public IScriptArray ThermostatNames
 		{
-			get { throw new NotImplementedException(); }
+			get { return new ScriptArrayMarshalByValue(this.thermostats.Select(t => t.Name), 1); }
 		}
 
 		public override bool StartDriver(Dictionary<string, byte[]> configFileData)
 		{
 			Logger.Debug("Starting Venstar ColorTouch Driver.");
+
+			//TODO: Set this.thermostatIndex from count of thermostats in config
 
 			try
 			{
@@ -112,8 +203,8 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 				multicastSocket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, 2);
 				multicastSocket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, false);
 				multicastSocket.Bind(localMulticastEndPoint);
-				this.multicastComm = new UdpCommunication(multicastSocket, localMulticastEndPoint);
-				this.multicastComm.ReceivedString += Comm_ReceivedString;
+				this.multicastComm = new UdpCommunication(multicastSocket, discoveryEndpoint);
+				this.multicastComm.ReceivedBytes += Comm_ReceivedBytes;
 
 				var localUnicastEndPoint = new IPEndPoint(IPAddress.Any, 0);
 				var unicastSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -121,11 +212,8 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 				unicastSocket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, 4);
 				unicastSocket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastLoopback, false);
 				unicastSocket.Bind(localUnicastEndPoint);
-				this.unicastComm = new UdpCommunication(unicastSocket, localUnicastEndPoint);
-				this.unicastComm.ReceivedString += Comm_ReceivedString;
-
-				this.multicastComm.Open();
-				this.unicastComm.Open();
+				this.unicastComm = new UdpCommunication(unicastSocket, discoveryEndpoint);
+				this.unicastComm.ReceivedBytes += Comm_ReceivedBytes;
 
 				this.SendDiscoveryMessage();
 
@@ -146,10 +234,52 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 			}
 			finally
 			{
-				if (this.refreshTimer != null) { this.refreshTimer.Dispose(); }
-				if (this.http != null) { this.http.Dispose(); }
-				if (this.multicastComm != null) { this.multicastComm.Dispose(); }
-				if (this.unicastComm != null) { this.unicastComm.Dispose(); }
+				//if (this.refreshTimer != null) { this.refreshTimer.Dispose(); }
+				//if (this.http != null) { this.http.Dispose(); }
+				//if (this.multicastComm != null) { this.multicastComm.Dispose(); }
+				//if (this.unicastComm != null) { this.unicastComm.Dispose(); }
+			}
+		}
+
+		private void AddThermostat(Thermostat thermostat)
+		{
+			this.thermostats.Add(thermostat);
+			//TODO: Save list of thermostats to configuration
+		}
+
+		private void Comm_ReceivedBytes(object sender, ReceivedBytesEventArgs e)
+		{
+			string message = System.Text.Encoding.Default.GetString(e.ReceiveBuffer);
+
+			if(message.Contains(COLORTOUCH_SSDP_KEYWORD))
+			{
+				var identifier = this.GetIdentifierFromSsdp(message);
+
+				Thermostat thermostat;
+
+				lock (this.thermostats)
+				{
+					if (this.thermostats.Select(t => t.Id).Contains(identifier))
+					{
+						thermostat = this.thermostats.Single(t => t.Id == identifier);
+						thermostat.LastSeen = DateTime.Now;
+					}
+					else
+					{
+						if (message.Contains(COLORTOUCH_SSDP_RESIDENTIAL_MODEL_KEYWORD))
+						{
+							this.AddThermostat(new ResidentialThermostat(identifier, message, this.Logger));
+						}
+						else if (message.Contains(COLORTOUCH_SSDP_COMMERCIAL_MODEL_KEYWORD))
+						{
+							this.AddThermostat(new CommercialThermostat(identifier, message, this.Logger));
+						}
+						else
+						{
+							this.Logger.Error(String.Format("Unable to identify thermostat model (Residential or Commercial) from SSDP Response [{0}].", message));
+						}
+					}
+				}
 			}
 		}
 
@@ -174,8 +304,6 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 			{
 				this.Logger.Debug("Refreshing Thermostat Values.");
 
-				//TODO: Clean up thermostats past max-age
-
 				//TODO: Refresh thermostat values
 			}
 			catch (Exception ex)
@@ -185,9 +313,17 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 			finally { this.refreshTimer.Start(); }
 		}
 
-		private void Comm_ReceivedString(object sender, ReceivedStringEventArgs e)
+		private string GetIdentifierFromSsdp(string ssdp)
 		{
-			throw new NotImplementedException();
+			try
+			{
+				return ssdp.Substring(ssdp.IndexOf(COLORTOUCH_SSDP_IDENTIFIER_TOKEN) + COLORTOUCH_SSDP_IDENTIFIER_TOKEN.Length, COLORTOUCH_SSDP_IDENTIFIER_LENGTH);
+			}
+			catch(Exception ex)
+			{
+				this.Logger.Error(String.Format("Error parsing thermostat identifier from SSDP response [{0}].", ssdp), ex);
+				throw ex;
+			}
 		}
 	}
 }

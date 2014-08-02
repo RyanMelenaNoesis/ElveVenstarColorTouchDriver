@@ -1,4 +1,5 @@
-﻿using NoesisLabs.Elve.VenstarColorTouch.Enums;
+﻿using CodecoreTechnologies.Elve.DriverFramework;
+using NoesisLabs.Elve.VenstarColorTouch.Enums;
 
 namespace NoesisLabs.Elve.VenstarColorTouch.Models
 {
@@ -6,5 +7,11 @@ namespace NoesisLabs.Elve.VenstarColorTouch.Models
 	{
 		public AwayState AwayState { get; set; }
 		public ResidentialRuntime Runtime { get; set; }
+
+		public ResidentialThermostat(string id, string ssdpResponse, ILogger logger)
+			: base(id, ssdpResponse, logger)
+		{
+
+		}
 	}
 }

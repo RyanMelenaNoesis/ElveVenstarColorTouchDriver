@@ -6,6 +6,6 @@ namespace NoesisLabs.Elve.VenstarColorTouch.Models
 	{
 		public int Humidity { get; set; }
 		public string Name { get; set; }
-		public decimal Temperature { get; set; }
+		public double Temperature { get; set; }
 	}
 }
