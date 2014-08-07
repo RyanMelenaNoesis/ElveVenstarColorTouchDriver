@@ -24,8 +24,8 @@ namespace NoesisLabs.Elve.VenstarColorTouch.Models
 		public double HeatTempMax { get; set; }
 		public double HeatTempMin { get; set; }
 		public int Humidity { get; set; }
-		public string Id { get; set; }
 		public DateTime LastSeen { get; set; }
+		public string MacAddress { get; set; }
 		public int MaxAgeSeconds { get; set; }
 		public Mode Mode { get; set; }
 		public string Name { get; set; }
@@ -37,11 +37,11 @@ namespace NoesisLabs.Elve.VenstarColorTouch.Models
 		public TempUnits TempUnits { get; set; }
 		public Uri Uri { get; set; }
 
-		public Thermostat(string id, string ssdp, ILogger logger)
+		public Thermostat(string macAddress, string ssdp, ILogger logger)
 		{
 			this.logger = logger;
 
-			this.Id = id;
+			this.MacAddress = macAddress;
 			this.LastSeen = DateTime.Now;
 			this.MaxAgeSeconds = this.GetMaxAgeSecondsFromSsdp(ssdp);
 			this.Name = this.GetNameFromSsdp(ssdp);

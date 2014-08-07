@@ -1,5 +1,6 @@
 ﻿using CodecoreTechnologies.Elve.DriverFramework;
 using CodecoreTechnologies.Elve.DriverFramework.Communication;
+using CodecoreTechnologies.Elve.DriverFramework.DeviceSettingEditors;
 using CodecoreTechnologies.Elve.DriverFramework.DriverInterfaces;
 using CodecoreTechnologies.Elve.DriverFramework.Scripting;
 using NoesisLabs.Elve.VenstarColorTouch.Enums;
@@ -14,12 +15,15 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
+using System.Xml.Linq;
 
 namespace NoesisLabs.Elve.VenstarColorTouch
 {
 	[Driver("Venstar ColorTouch Driver", "A driver for monitoring and controlling Venstar ColorTouch thermostats.", "Ryan Melena", "Climate Control", "", "ColorTouch", DriverCommunicationPort.Network, DriverMultipleInstances.OnePerDriverService, 0, 1, DriverReleaseStages.Development, "Venstar", "http://www.venstar.com/", null)]
 	public class VenstarColorTouchDriver : Driver, IClimateControlDriver
 	{
+		#region Constants
+
 		private const string COLORTOUCH_SSDP_COMMERCIAL_MODEL_KEYWORD = "type:commercial";
 		private const string COLORTOUCH_SSDP_IDENTIFIER_TOKEN = "ecp:";
 		private const int COLORTOUCH_SSDP_IDENTIFIER_LENGTH = 17;
@@ -28,12 +32,53 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 		private const int MAX_THERMOSTATS = 256;
 		private const string SSDP_DISCOVERY_MESSAGE = "M-SEARCH * HTTP/1.1\r\nHost: 239.255.255.250:1900\r\nMan: ssdp:discover\r\nST: colortouch:ecp\r\n";
 
+		#endregion
+
+		#region Fields
+
 		private HttpClient http;
 		private ICommunication multicastComm;
 		private Timer refreshTimer;
+		private List<Thermostat> thermostats = new List<Thermostat>();
 		private ICommunication unicastComm;
 
-		private List<Thermostat> thermostats = new List<Thermostat>();
+		#endregion
+
+		#region DriverSettings
+
+		[DriverSetting("Refresh Interval", "Interval in seconds between status update requests.  Values update asynchronously when changed via Elve.", 1D, double.MaxValue, "1", true)]
+		public int RefreshIntervalSetting { get; set; }
+
+		[DriverSettingArrayNames("Thermostat Mac Addresses", "MAC address for each source.", typeof(ArrayItemsDriverSettingEditor), "MacAddresses", 1, 256, "", true)]
+		public string MacAddressesSetting
+		{
+			set
+			{
+				if (!string.IsNullOrEmpty(value))
+				{
+					XElement element = XElement.Parse(value);
+					element.Elements("Item").Select(e => e.Attribute("MacAddress").Value).ToList().Except(this.thermostats.Select(t => t.MacAddress));
+				}
+			}
+		}
+
+		[DriverSetting("Zone Count", "Number of zones supported by device.", new string[] { "4", "6" }, "4", true)]
+		public int ZoneCountSetting { get; set; }
+
+		[DriverSettingArrayNames("Zone Names", "User-defined friendly names for each zone.", typeof(ArrayItemsDriverSettingEditor), "ZoneNames", MIN_ZONE_NUMBER, MAX_ZONE_NUMBER, "", false)]
+		public string ZoneNamesSetting
+		{
+			set
+			{
+				if (!string.IsNullOrEmpty(value))
+				{
+					XElement element = XElement.Parse(value);
+					this._zoneNames = element.Elements("Item").Select(e => e.Attribute("Name").Value).ToArray();
+				}
+			}
+		}
+
+		#endregion
 
 		[ScriptObjectPropertyAttribute("Paged List Thermostats", "Provides the list of thermostats to be shown in a Touch Screen Interface's Paged List control. The item value has the following properties: ID. ID is the thermostat id.")]
 		[SupportsDriverPropertyBinding]
@@ -259,9 +304,9 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 
 				lock (this.thermostats)
 				{
-					if (this.thermostats.Select(t => t.Id).Contains(identifier))
+					if (this.thermostats.Select(t => t.MacAddress).Contains(identifier))
 					{
-						thermostat = this.thermostats.Single(t => t.Id == identifier);
+						thermostat = this.thermostats.Single(t => t.MacAddress == identifier);
 						thermostat.LastSeen = DateTime.Now;
 					}
 					else
