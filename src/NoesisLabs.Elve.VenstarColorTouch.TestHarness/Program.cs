@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using CodecoreTechnologies.Elve.DriverFramework.DriverTestHarness;
+﻿using CodecoreTechnologies.Elve.DriverFramework.DriverTestHarness;
 using CodecoreTechnologies.Elve.DriverFramework.Scripting;
-
+using System;
+using System.Collections.Generic;
 
 namespace NoesisLabs.Elve.VenstarColorTouch.TestHarness
 {
-	class Program
+	internal class Program
 	{
-		static void Main(string[] args)
+		private static void Main(string[] args)
 		{
 			// Prepare any needed configuration files (this is rare).
 			Dictionary<string, byte[]> configFiles = new Dictionary<string, byte[]>();

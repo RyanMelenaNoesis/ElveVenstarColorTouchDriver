@@ -1,15 +1,11 @@
 ﻿using CodecoreTechnologies.Elve.DriverFramework;
 using CodecoreTechnologies.Elve.DriverFramework.DeviceSettingEditors;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace NoesisLabs.Elve.VenstarColorTouch
 {
-	public class ThermostatsDriverSettingEditor : IDriverSettingEditor
+	public class ThermostatIdentifiersDriverSettingEditor : IDriverSettingEditor
 	{
 		private string value;
 
@@ -25,7 +21,12 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 
 		public DialogResult ShowDialog(IWin32Window owner, string deviceName, string parameterName, DriverSettingAttribute attribute, string initialValue)
 		{
-			using (ThermostatsDriverSettingEditorForm settingEditorForm = new ThermostatsDriverSettingEditorForm(parameterName, attribute, initialValue))
+			ILogger logger = new StandardLogger(SharedLibrary.LoggerContextType.Driver, "Venstar", SharedLibrary.LoggerVerbosity.Detailed);
+			logger.Info(deviceName);
+			logger.Info(parameterName);
+			logger.Info(initialValue);
+
+			using (ThermostatIdentifiersDriverSettingEditorForm settingEditorForm = new ThermostatIdentifiersDriverSettingEditorForm(parameterName, attribute, initialValue, logger))
 			{
 				DialogResult dialogResult = settingEditorForm.ShowDialog(owner);
 				this.value = dialogResult != DialogResult.OK ? (string)null : settingEditorForm.Value;
