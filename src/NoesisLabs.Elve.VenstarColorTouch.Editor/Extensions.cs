@@ -1,9 +1,8 @@
-﻿using NoesisLabs.Elve.VenstarColorTouch.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Xml.Linq;
 
-namespace NoesisLabs.Elve.VenstarColorTouch
+namespace NoesisLabs.Elve.VenstarColorTouch.Editor
 {
 	public static class Extensions
 	{

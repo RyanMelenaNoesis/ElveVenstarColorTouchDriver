@@ -3,17 +3,19 @@ using CodecoreTechnologies.Elve.DriverFramework.Communication;
 using CodecoreTechnologies.Elve.DriverFramework.DriverInterfaces;
 using CodecoreTechnologies.Elve.DriverFramework.Scripting;
 using Newtonsoft.Json;
+using NoesisLabs.Elve.VenstarColorTouch.Editor;
 using NoesisLabs.Elve.VenstarColorTouch.Enums;
 using NoesisLabs.Elve.VenstarColorTouch.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Timers;
 
 namespace NoesisLabs.Elve.VenstarColorTouch
 {
-	[Driver("Venstar ColorTouch Driver", "A driver for monitoring and controlling Venstar ColorTouch thermostats.", "Ryan Melena", "Climate Control", "", "ColorTouch", DriverCommunicationPort.Network, DriverMultipleInstances.OnePerDriverService, 0, 2, DriverReleaseStages.Production, "Venstar", "http://www.venstar.com/", null)]
+	[Driver("Venstar ColorTouch Driver", "A driver for monitoring and controlling Venstar ColorTouch thermostats.", "Ryan Melena", "Climate Control", "", "ColorTouch", DriverCommunicationPort.Network, DriverMultipleInstances.OnePerDriverService, 0, 3, DriverReleaseStages.Production, "Venstar", "http://www.venstar.com/", null)]
 	public class VenstarColorTouchDriver : Driver, IClimateControlDriver
 	{
 		#region Constants
@@ -292,6 +294,10 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 		{
 			Logger.Debug("Starting Venstar ColorTouch Driver.");
 
+
+			AppDomain currentDomain = AppDomain.CurrentDomain;
+			currentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
+
 			//TODO: Set this.thermostatIndex from count of thermostats in config
 
 			try
@@ -317,6 +323,19 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 				//if (this.http != null) { this.http.Dispose(); }
 				//if (this.multicastComm != null) { this.multicastComm.Dispose(); }
 				//if (this.unicastComm != null) { this.unicastComm.Dispose(); }
+			}
+		}
+
+		private Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+		{
+			if(args.Name.Contains("NoesisLabs.Elve.VenstarColorTouch"))
+			{
+				string fullPath = System.Reflection.Assembly.GetAssembly(typeof(VenstarColorTouchDriver)).Location;
+				return Assembly.LoadFrom(fullPath);
+			}
+			else
+			{
+				return null;
 			}
 		}
 

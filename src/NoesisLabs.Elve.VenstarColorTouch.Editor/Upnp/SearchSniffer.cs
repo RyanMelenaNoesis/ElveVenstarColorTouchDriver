@@ -22,7 +22,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-namespace NoesisLabs.Elve.VenstarColorTouch.Upnp
+namespace NoesisLabs.Elve.VenstarColorTouch.Editor.Upnp
 {
 	/// <summary>
 	/// Summary description for UPnPSearchSniffer.

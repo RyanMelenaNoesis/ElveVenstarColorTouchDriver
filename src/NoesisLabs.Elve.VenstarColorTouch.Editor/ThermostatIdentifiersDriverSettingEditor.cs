@@ -3,7 +3,7 @@ using CodecoreTechnologies.Elve.DriverFramework.DeviceSettingEditors;
 using System;
 using System.Windows.Forms;
 
-namespace NoesisLabs.Elve.VenstarColorTouch
+namespace NoesisLabs.Elve.VenstarColorTouch.Editor
 {
 	public class ThermostatIdentifiersDriverSettingEditor : IDriverSettingEditor
 	{

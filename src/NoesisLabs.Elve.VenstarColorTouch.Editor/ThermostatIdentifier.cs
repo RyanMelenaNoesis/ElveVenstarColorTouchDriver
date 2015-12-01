@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NoesisLabs.Elve.VenstarColorTouch.Models
+namespace NoesisLabs.Elve.VenstarColorTouch.Editor
 {
 	public class ThermostatIdentifier
 	{

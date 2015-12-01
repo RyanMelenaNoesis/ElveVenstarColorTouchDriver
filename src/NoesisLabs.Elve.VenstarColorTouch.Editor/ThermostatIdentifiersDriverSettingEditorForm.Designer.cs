@@ -1,4 +1,4 @@
-﻿namespace NoesisLabs.Elve.VenstarColorTouch
+﻿namespace NoesisLabs.Elve.VenstarColorTouch.Editor
 {
 	partial class ThermostatIdentifiersDriverSettingEditorForm
 	{

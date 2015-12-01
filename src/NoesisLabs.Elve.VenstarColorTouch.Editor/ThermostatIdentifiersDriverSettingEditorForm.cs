@@ -1,13 +1,12 @@
 ﻿using CodecoreTechnologies.Elve.DriverFramework;
-using NoesisLabs.Elve.VenstarColorTouch.Models;
-using NoesisLabs.Elve.VenstarColorTouch.Upnp;
+using NoesisLabs.Elve.VenstarColorTouch.Editor.Upnp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Windows.Forms;
 
-namespace NoesisLabs.Elve.VenstarColorTouch
+namespace NoesisLabs.Elve.VenstarColorTouch.Editor
 {
 	public partial class ThermostatIdentifiersDriverSettingEditorForm : Form
 	{
