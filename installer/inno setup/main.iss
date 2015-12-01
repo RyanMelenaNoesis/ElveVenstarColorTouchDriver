@@ -29,9 +29,9 @@ SolidCompression=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "..\..\src\NoesisLabs.Elve.VenstarColorTouch\bin\Debug\Newtonsoft.Json.dll"; DestDir: "{%PROGRAMDATA}\Codecore Technologies\Elve\DeviceDrivers\Compiled"; Flags: ignoreversion
-Source: "..\..\src\NoesisLabs.Elve.VenstarColorTouch\bin\Debug\NoesisLabs.Elve.VenstarColorTouch.dll"; DestDir: "{%PROGRAMDATA}\Codecore Technologies\Elve\DeviceDrivers\Compiled"; Flags: ignoreversion
-Source: "C:\Repos\RyanMelenaNoesis\ElveVenstarColorTouchDriver\src\NoesisLabs.Elve.VenstarColorTouch\bin\Debug\NoesisLabs.Elve.VenstarColorTouch.Editor.dll"; DestDir: "{app}"; Flags: gacinstall sharedfile uninsnosharedfileprompt; StrongAssemblyName: "NoesisLabs.Elve.VenstarColorTouch.Editor, Version=1.0.0.0, Culture=neutral, PublicKeyToken=40680e8f89f05308, ProcessorArchitecture=MSIL"
+Source: "..\..\src\NoesisLabs.Elve.VenstarColorTouch\bin\Release\Newtonsoft.Json.dll"; DestDir: "{%PROGRAMDATA}\Codecore Technologies\Elve\DeviceDrivers\Compiled"; Flags: ignoreversion
+Source: "..\..\src\NoesisLabs.Elve.VenstarColorTouch\bin\Release\NoesisLabs.Elve.VenstarColorTouch.dll"; DestDir: "{%PROGRAMDATA}\Codecore Technologies\Elve\DeviceDrivers\Compiled"; Flags: ignoreversion
+Source: "..\..\src\NoesisLabs.Elve.VenstarColorTouch\bin\Release\NoesisLabs.Elve.VenstarColorTouch.Editor.dll"; DestDir: "{app}"; Flags: gacinstall sharedfile uninsnosharedfileprompt; StrongAssemblyName: "NoesisLabs.Elve.VenstarColorTouch.Editor, Version=1.0.0.0, Culture=neutral, PublicKeyToken=40680e8f89f05308, ProcessorArchitecture=MSIL"
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Code]
