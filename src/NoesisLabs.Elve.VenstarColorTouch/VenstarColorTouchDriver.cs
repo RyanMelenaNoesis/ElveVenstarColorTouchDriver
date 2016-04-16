@@ -15,7 +15,7 @@ using System.Timers;
 
 namespace NoesisLabs.Elve.VenstarColorTouch
 {
-	[Driver("Venstar ColorTouch Driver", "A driver for monitoring and controlling Venstar ColorTouch thermostats.", "Ryan Melena", "Climate Control", "", "ColorTouch", DriverCommunicationPort.Network, DriverMultipleInstances.OnePerDriverService, 0, 3, DriverReleaseStages.Production, "Venstar", "http://www.venstar.com/", null)]
+	[Driver("Venstar ColorTouch Driver", "A driver for monitoring and controlling Venstar ColorTouch thermostats.", "Ryan Melena", "Climate Control", "", "ColorTouch", DriverCommunicationPort.Network, DriverMultipleInstances.OnePerDriverService, 0, 4, DriverReleaseStages.Production, "Venstar", "http://www.venstar.com/", null)]
 	public class VenstarColorTouchDriver : Driver, IClimateControlDriver
 	{
 		#region Constants
@@ -441,34 +441,36 @@ namespace NoesisLabs.Elve.VenstarColorTouch
 		{
 			this.Logger.Debug("Updating Thermostat List.");
 
-			WebClient http = new WebClient();
-			foreach (ThermostatIdentifier thermostatIdentifier in this.thermostatIdentifiers)
+			using (WebClient http = new WebClient())
 			{
-				Thermostat thermostat = this.thermostats.SingleOrDefault(t => t.MacAddress == thermostatIdentifier.MacAddress);
-
-				if (thermostat == null)
+				foreach (ThermostatIdentifier thermostatIdentifier in this.thermostatIdentifiers)
 				{
-					ApiInformation apiInfo = JsonConvert.DeserializeObject<ApiInformation>(http.DownloadString(thermostatIdentifier.Url));
+					Thermostat thermostat = this.thermostats.SingleOrDefault(t => t.MacAddress == thermostatIdentifier.MacAddress);
 
-					thermostat = (apiInfo.Type == "commercial") ?
-						(Thermostat)new CommercialThermostat(thermostatIdentifier.MacAddress, thermostatIdentifier.Name, thermostatIdentifier.Url, this.Logger) :
-						(Thermostat)new ResidentialThermostat(thermostatIdentifier.MacAddress, thermostatIdentifier.Name, thermostatIdentifier.Url, this.Logger);
+					if (thermostat == null)
+					{
+						ApiInformation apiInfo = JsonConvert.DeserializeObject<ApiInformation>(http.DownloadString(thermostatIdentifier.Url));
 
-					thermostat.CoolTempChanged += new EventHandler(this.ThermostatCoolSetPointChanged);
-					thermostat.SensorsChanged += new EventHandler(this.ThermostatCurrentTemperatureChanged);
-					thermostat.FanSettingChanged += new EventHandler(this.ThermostatFanModeChanged);
-					thermostat.FanSettingChanged += new EventHandler(this.ThermostatFanModeTextChanged);
-					thermostat.HeatTempChanged += new EventHandler(this.ThermostatHeatSetPointChanged);
-					thermostat.ScheduleSettingChanged += new EventHandler(this.ThermostatHoldChanged);
-					thermostat.ModeChanged += new EventHandler(this.ThermostatModeTextChanged);
-					thermostat.ModeChanged += new EventHandler(this.ThermostatModeChanged);
+						thermostat = (apiInfo.Type == "commercial") ?
+							(Thermostat)new CommercialThermostat(thermostatIdentifier.MacAddress, thermostatIdentifier.Name, thermostatIdentifier.Url, this.Logger) :
+							(Thermostat)new ResidentialThermostat(thermostatIdentifier.MacAddress, thermostatIdentifier.Name, thermostatIdentifier.Url, this.Logger);
 
-					this.thermostats.Add(thermostat);
-				}
-				else
-				{
-					thermostat.Name = thermostatIdentifier.Name;
-					thermostat.Url = thermostatIdentifier.Url;
+						thermostat.CoolTempChanged += new EventHandler(this.ThermostatCoolSetPointChanged);
+						thermostat.SensorsChanged += new EventHandler(this.ThermostatCurrentTemperatureChanged);
+						thermostat.FanSettingChanged += new EventHandler(this.ThermostatFanModeChanged);
+						thermostat.FanSettingChanged += new EventHandler(this.ThermostatFanModeTextChanged);
+						thermostat.HeatTempChanged += new EventHandler(this.ThermostatHeatSetPointChanged);
+						thermostat.ScheduleSettingChanged += new EventHandler(this.ThermostatHoldChanged);
+						thermostat.ModeChanged += new EventHandler(this.ThermostatModeTextChanged);
+						thermostat.ModeChanged += new EventHandler(this.ThermostatModeChanged);
+
+						this.thermostats.Add(thermostat);
+					}
+					else
+					{
+						thermostat.Name = thermostatIdentifier.Name;
+						thermostat.Url = thermostatIdentifier.Url;
+					}
 				}
 			}
 		}

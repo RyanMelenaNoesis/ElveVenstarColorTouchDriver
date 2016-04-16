@@ -2,10 +2,9 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Elve Venstar ColorTouch Driver"
-#define MyAppVersion "0.3"
+#define MyAppVersion "0.4"
 #define MyAppPublisher "Noesis Labs"
 #define MyAppURL "https://noesislabs.com/"
-#define MyAppExeName "MyProg.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -21,7 +20,7 @@ AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 CreateAppDir=no
 OutputDir=C:\temp\Inno Setup
-OutputBaseFilename=Elve Venstar ColorTouch Driver 0.3
+OutputBaseFilename=Elve Venstar ColorTouch Driver 0.4
 Compression=lzma
 SolidCompression=yes
 
@@ -29,7 +28,6 @@ SolidCompression=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "..\..\src\NoesisLabs.Elve.VenstarColorTouch\bin\Release\Newtonsoft.Json.dll"; DestDir: "{%PROGRAMDATA}\Codecore Technologies\Elve\DeviceDrivers\Compiled"; Flags: ignoreversion
 Source: "..\..\src\NoesisLabs.Elve.VenstarColorTouch\bin\Release\NoesisLabs.Elve.VenstarColorTouch.dll"; DestDir: "{%PROGRAMDATA}\Codecore Technologies\Elve\DeviceDrivers\Compiled"; Flags: ignoreversion
 Source: "..\..\src\NoesisLabs.Elve.VenstarColorTouch\bin\Release\NoesisLabs.Elve.VenstarColorTouch.Editor.dll"; DestDir: "{app}"; Flags: gacinstall sharedfile uninsnosharedfileprompt; StrongAssemblyName: "NoesisLabs.Elve.VenstarColorTouch.Editor, Version=1.0.0.0, Culture=neutral, PublicKeyToken=40680e8f89f05308, ProcessorArchitecture=MSIL"
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files

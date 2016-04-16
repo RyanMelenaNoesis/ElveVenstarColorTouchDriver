@@ -359,8 +359,11 @@ namespace NoesisLabs.Elve.VenstarColorTouch.Models
 			}
 			else
 			{
-				WebClient http = new WebClient();
-				string response = http.UploadString(this.Url + "/control", String.Format("cooltemp={0}&heattemp={1}", temperature, this.HeatTemp));
+				string response;
+				using (WebClient http = new WebClient())
+				{
+					response = http.UploadString(this.Url + "/control", String.Format("cooltemp={0}&heattemp={1}", temperature, this.HeatTemp));
+				}
 
 				if (response.Contains(SUCCESS_KEYWORD))
 				{
@@ -380,8 +383,11 @@ namespace NoesisLabs.Elve.VenstarColorTouch.Models
 
 		public void SetFanSetting(FanSetting setting)
 		{
-			WebClient http = new WebClient();
-			string response = http.UploadString(this.Url + "/control", String.Format("fan={0}", (int)setting));
+			string response;
+			using (WebClient http = new WebClient())
+			{
+				response = http.UploadString(this.Url + "/control", String.Format("fan={0}", (int)setting));
+			}
 
 			if (response.Contains(SUCCESS_KEYWORD))
 			{
@@ -416,8 +422,11 @@ namespace NoesisLabs.Elve.VenstarColorTouch.Models
 			}
 			else
 			{
-				WebClient http = new WebClient();
-				string response = http.UploadString(this.Url + "/control", String.Format("heattemp={0}&cooltemp={1}", temperature, this.CoolTemp));
+				string response;
+				using (WebClient http = new WebClient())
+				{
+					response = http.UploadString(this.Url + "/control", String.Format("heattemp={0}&cooltemp={1}", temperature, this.CoolTemp));
+				}
 
 				if (response.Contains(SUCCESS_KEYWORD))
 				{

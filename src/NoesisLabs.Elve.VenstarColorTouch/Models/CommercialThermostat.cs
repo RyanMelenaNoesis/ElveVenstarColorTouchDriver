@@ -82,12 +82,19 @@ namespace NoesisLabs.Elve.VenstarColorTouch.Models
 
 		public override void UpdateStatus()
 		{
-			WebClient http = new WebClient();
+			CommercialThermostatInfo info;
+			List<Alert> alerts;
+			List<CommercialRuntime> runtimes;
+			List<Sensor> sensors;
 
-			CommercialThermostatInfo info = JsonConvert.DeserializeObject<CommercialThermostatInfo>(http.DownloadString(this.Url + "/query/info"));
-			List<Alert> alerts = JsonConvert.DeserializeAnonymousType(http.DownloadString(this.Url + "/query/alerts"), new { alerts = new List<Alert>() }).alerts;
-			List<CommercialRuntime> runtimes = JsonConvert.DeserializeAnonymousType(http.DownloadString(this.Url + "/query/runtimes"), new { runtimes = new List<CommercialRuntime>() }).runtimes;
-			List<Sensor> sensors = JsonConvert.DeserializeAnonymousType(http.DownloadString(this.Url + "/query/sensors"), new { sensors = new List<Sensor>() }).sensors;
+			using (WebClient http = new WebClient())
+			{
+
+				info = JsonConvert.DeserializeObject<CommercialThermostatInfo>(http.DownloadString(this.Url + "/query/info"));
+				alerts = JsonConvert.DeserializeAnonymousType(http.DownloadString(this.Url + "/query/alerts"), new { alerts = new List<Alert>() }).alerts;
+				runtimes = JsonConvert.DeserializeAnonymousType(http.DownloadString(this.Url + "/query/runtimes"), new { runtimes = new List<CommercialRuntime>() }).runtimes;
+				sensors = JsonConvert.DeserializeAnonymousType(http.DownloadString(this.Url + "/query/sensors"), new { sensors = new List<Sensor>() }).sensors;
+			}
 
 			this.ForceUnoccupied = info.ForceUnoccupied;
 			this.HolidayState = info.HolidayState;
